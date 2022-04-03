@@ -23,6 +23,7 @@
 #include <Wire.h>
 #include <MicroLCD.h>
 
+
 #include <IRremote.h> // Biblioteca IRemote
 
 const int pinBuzzer = 5;
