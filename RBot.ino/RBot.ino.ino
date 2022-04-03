@@ -22,7 +22,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <MicroLCD.h>
-
+#include <Stepper.h> 
 
 #include <IRremote.h> // Biblioteca IRemote
 
@@ -40,6 +40,13 @@ const int pinoServo = 2;
 Servo s;    //objeto do tipo servo
 int pos;    //variável para receber o valor da posição do servo
 
+#define   in1   8      //entrada 1 do ULN2003
+#define   in2   9      //entrada 2 do ULN2003
+#define   in3  10      //entrada 3 do ULN2003
+#define   in4  11      //entrada 4 do ULN2003
+
+const int stepsPerRevolution = 180;
+Stepper myStepper(stepsPerRevolution, in1,in3,in2,in4); 
 
 const PROGMEM uint8_t eye1[120 * 40 / 8] = {
 
@@ -339,6 +346,10 @@ const PROGMEM uint8_t tight[120 * 40 / 8] = {
 void setup()
 {  
   Serial.begin(9600);
+
+  myStepper.setSpeed(180);
+
+  //myStepper.step(stepsPerRevolution / 2);
   
   
   s.attach(pinoServo);  //associação do pino digital ao objeto do tipo servo
@@ -417,22 +428,25 @@ void happy()
   lcd.setCursor(4, 10);
   lcd.draw(tight, 120, 40);
   tone(pinBuzzer,200,10);
-  s.write(80);
+  
   delay(100);
+
+  
   
   tone(pinBuzzer,210,1000);
-  s.write(100);  
+   
   delay(80);
   
   tone(pinBuzzer,220,1500); 
   delay(100);   
   
   tone(pinBuzzer,230,1500);
-  s.write(80);  
+    
   delay(100);
   
   tone(pinBuzzer,240,15);
-  s.write(100);
+
+  myStepper.step(50);   
   delay(50);
   
   tone(pinBuzzer,250,15);
@@ -443,7 +457,7 @@ void happy()
   delay(10);
   tone(pinBuzzer,400,15);
   delay(10);
-  s.write(80);
+  myStepper.step(-100);
   
   tone(pinBuzzer,350,15);
   delay(20);
@@ -455,7 +469,7 @@ void happy()
   delay(20);
   tone(pinBuzzer,950,15);
   delay(20);
-  s.write(100);
+  myStepper.step(100);
   
   tone(pinBuzzer,1050,15);
   delay(20);
@@ -469,7 +483,7 @@ void happy()
   delay(20);
   tone(pinBuzzer,1550,15);
   delay(20);
-  s.write(80);
+  myStepper.step(-100);
   
   tone(pinBuzzer,1950,15);
   delay(20);
@@ -483,7 +497,7 @@ void happy()
   delay(20);
   tone(pinBuzzer,1550,15);
   delay(20);
-  s.write(100);
+  myStepper.step(100);
   
   tone(pinBuzzer,1950,15);
   delay(20);
@@ -493,7 +507,7 @@ void happy()
   delay(20);
   tone(pinBuzzer,3550,15);
   delay(20);
-  s.write(80);
+  myStepper.step(-100);
   
   tone(pinBuzzer,2550,15);
   delay(20);
@@ -505,10 +519,11 @@ void happy()
   delay(20);
   tone(pinBuzzer,550,15);
   delay(20);
-  s.write(100);
+  myStepper.step(100);
 
   delay(100);
   s.write(90);
+  myStepper.step(-50);
 
   
 };
@@ -531,18 +546,18 @@ void eye_look_left(int time = 1000){
   //wink();
   lcd.setCursor(4, 10);
   lcd.draw(look_left, 120, 40);
-  s.write(135);
+  myStepper.step(200);
   delay(time);
-  s.write(90);
+  myStepper.step(-200);
 }
 
 void eye_look_right(int time = 1000){
   //wink();
   lcd.setCursor(4, 10);
   lcd.draw(look_right, 120, 40);
-  s.write(45);
+  myStepper.step(-200);
   delay(time);
-  s.write(90);
+  myStepper.step(200);
 }
 
 void cute_eyes(int time = 1000){
@@ -556,32 +571,32 @@ void cute_eyes(int time = 1000){
   //tone(pinBuzzer,1300,100);
   delay(60);
 
-  s.write(80);
+  myStepper.step(50);
   //tone(pinBuzzer,1100,100);
   delay(70);
   //tone(pinBuzzer,900,100);
   delay(80);
   
-  s.write(100);
+  myStepper.step(-100);
   //tone(pinBuzzer,800,100);
   delay(100);
  // tone(pinBuzzer,700,120);
 
-  s.write(80);
+  myStepper.step(100);
   delay(110);
   //tone(pinBuzzer,600,140);
   delay(120);
 
-  s.write(100);
+  myStepper.step(-100);
   //tone(pinBuzzer,500,190);
   delay(130);
   //tone(pinBuzzer,400,240);
   delay(140);
 
-  s.write(80);
+  myStepper.step(100);
   //tone(pinBuzzer,300,260);
   delay(160);
-  s.write(90);
+  myStepper.step(-50);
   delay(time);
   
 };
@@ -590,76 +605,53 @@ void cute_eyes(int time = 1000){
 void loop()
 {
 
-  if (irrecv.decode(&resultados)){
-  if (resultados.value == 0XFFFFFFFF)
-    resultados.value = key_value;
-    
-    switch(resultados.value){      
-      case 0xFF30CF:
-        Serial.println("Botão 1");
-        eye_look_right();
-        open_eyes(100);
-        break;
-      
-      case 0xFF18E7:
-        Serial.println("Botão 2");
-        cute_eyes();
-        open_eyes(100);
-        break;
-      
-      case 0xFF7A85:
-        Serial.println("Botão 3");
-        eye_look_left();
-        open_eyes(100);
-        break;
-  }
-    key_value = resultados.value;
-    irrecv.resume(); 
-  }
+  //myStepper.step(stepsPerRevolution / 2);
+
+  
   
   
 
 
-//  open_eyes(2000);
-//
-//  wink();
-//  open_eyes(2000);
-//
-//  wink();
-//  eye_look_left();
-//
-//  wink();
-//  eye_look_right();
-//
-//  wink();
-//  open_eyes(2000);
-//  
-//  wink();
-//  cute_eyes(2000);
-//
-//  wink();
-//  eye_look_left();
-//
-//  wink();
-//  eye_look_right();
-//
-//  wink();
-//  open_eyes(5000);
-//
-//  wink();
-//  eye_look_right();
-//
-//  wink();
-//  open_eyes(5000);
-//
-//  wink();
-//  eye_look_left();
-//
-//  wink();
-//  open_eyes(5000);
-//
-//  happy();
-//  delay(1000);
+  open_eyes(2000);
+
+  wink();
+  open_eyes(2000);
+
+  wink();
+  eye_look_left();
+
+  wink();
+  eye_look_right();
+
+  wink();
+  open_eyes(2000);
+  
+  wink();
+  cute_eyes(2000);
+
+  wink();
+  eye_look_left();
+
+  wink();
+  eye_look_right();
+
+  wink();
+  open_eyes(3000);
+
+  wink();
+  eye_look_right();
+
+  wink();
+  open_eyes(3000);
+
+  wink();
+  eye_look_left();
+
+  wink();
+  open_eyes(3000);
+
+  happy();
+  delay(1000);
 
   
 
